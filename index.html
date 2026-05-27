@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Calculadora Pastelera Ultimate v9 - ERP Bodega</title>
+    <title>Calculadora Pastelera Ultimate v9 - Bodega</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         body { background-color: #FFF5F6; color: #2D2D2D; padding: 10px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding-bottom: 30px; -webkit-text-size-adjust: 100%; }
@@ -89,7 +89,6 @@
             <button id="tab-bodega" class="tab-btn" onclick="switchTab('bodega')">📦 Bodega</button>
         </div>
         
-        <!-- SECCIÓN 1: CALCULAR -->
         <div id="sec-calc" class="section active">
             <label>1. Código ID del dulce:</label>
             <input type="number" id="calcId" pattern="[0-9]*" inputmode="numeric" placeholder="Ej: 101" style="margin-bottom:15px">
@@ -108,13 +107,11 @@
             </div>
         </div>
         
-        <!-- SECCIÓN 2: LISTA DE RECETAS -->
         <div id="sec-lista" class="section">
             <label style="margin-bottom:10px">Toca una receta para ver sus ingredientes y paso a paso:</label>
             <div class="list-container" id="listaProductosContainer"></div>
         </div>
         
-        <!-- SECCIÓN 3: CREAR O EDITAR -->
         <div id="sec-crear" class="section">
             <div id="editIndicatorPanel" class="edit-indicator" style="display:none;">
                 <span>✏️ Modo Edición Activo</span>
@@ -143,7 +140,6 @@
             <button class="action-btn btn-save" id="btnGuardarReceta" onclick="guardarNuevaReceta()">💾 GUARDAR RECETA COMPLETA</button>
         </div>
         
-        <!-- SECCIÓN 4: STOCK (CLÁSICO - INGRESOS/COMPRAS) -->
         <div id="sec-stock" class="section">
             <div style="display:flex; gap:10px; margin-bottom:15px; font-weight:bold; font-size:0.85rem;">
                 <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="radio" name="stockM" value="update" checked onchange="altStock()" style="width:auto;"> Reestock / Editar</label>
@@ -171,7 +167,6 @@
             </div>
         </div>
 
-        <!-- SECCIÓN 5: BODEGA (NUEVA - INVENTARIO EN TIEMPO REAL) -->
         <div id="sec-bodega" class="section">
             <label style="margin-bottom:5px; color:#E91E63;">Nivel de Insumos en Tiempo Real</label>
             <label style="font-size:0.75rem; color:#666; font-weight:normal; margin-bottom:15px;">* Las alertas rojas indican stock menor al 25%.</label>
@@ -200,8 +195,8 @@
         };
 
         const RECETAS_DEFAULT = {
-            "101": {"nombre": "Alfajor de Cerveza y Nuez", "pasos": "1. Batir la mantequilla con el azúcar rubia.\n2. Añadir chips de chocolate por encima y mezclar dentro.", "ingredientes": [{"ing":"mantequilla","cant":200},{"ing":"miel","cant":35},{"ing":"cerveza negra","cant":120},{"ing":"nueces picadas","cant":40}]},
-            "102": {"nombre": "Cookies New York Avena y Manzana", "pasos": "1. Mezclar húmedos, añadir manzanas picadas.\n2. Sumar avena y harina.", "ingredientes": [{"ing":"avena","cant":200},{"ing":"harina","cant":250},{"ing":"mantequilla","cant":100},{"ing":"manzana verde","cant":150}]},
+            "101": {"nombre": "Alfajor de Cerveza y Nuez", "pasos": "1. Batir la mantequilla con el azúcar rubia.\\n2. Añadir chips de chocolate por encima y mezclar dentro.", "ingredientes": [{"ing":"mantequilla","cant":200},{"ing":"miel","cant":35},{"ing":"cerveza negra","cant":120},{"ing":"nueces picadas","cant":40}]},
+            "102": {"nombre": "Cookies New York Avena y Manzana", "pasos": "1. Mezclar húmedos, añadir manzanas picadas.\\n2. Sumar avena y harina.", "ingredientes": [{"ing":"avena","cant":200},{"ing":"harina","cant":250},{"ing":"mantequilla","cant":100},{"ing":"manzana verde","cant":150}]},
             "103": {"nombre": "Profiteroles Tradicionales", "costo_tanda": 2970},
             "104": {"nombre": "Muffins de Frambuesa", "costo_tanda": 6100},
             "105": {"nombre": "Pan de Pascua Navideño", "costo_tanda": 9400},
@@ -274,7 +269,6 @@
             nextId();
         }
 
-        // TABS ACTUALIZADOS PARA MANEJAR 5 SECCIONES
         function switchTab(t) {
             try {
                 document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -320,7 +314,6 @@
         }
 
         function renderListas() {
-            // RENDER RECETAS
             try {
                 const pBox = document.getElementById('listaProductosContainer'); pBox.innerHTML = '';
                 Object.keys(recetas).sort((a,b) => parseInt(a)-parseInt(b)).forEach(id => {
@@ -328,7 +321,7 @@
                     let cost = getCost(id);
                     
                     let pasosRaw = recetas[id].pasos ? String(recetas[id].pasos) : "";
-                    let pasosHtml = pasosRaw ? `<div class="steps-box"><b>PASO A PASO:</b><br>${pasosRaw.replace(/\n/g, '<br>').replace(/\n/g, '<br>')}</div>` : `<div class="steps-box" style="color:#999; font-style:italic;">Sin instrucciones registradas.</div>`;
+                    let pasosHtml = pasosRaw ? `<div class="steps-box"><b>PASO A PASO:</b><br>${pasosRaw.replace(/\\n/g, '<br>').replace(/\\n/g, '<br>')}</div>` : `<div class="steps-box" style="color:#999; font-style:italic;">Sin instrucciones registradas.</div>`;
                     
                     let ingListHtml = '<div style="font-size:0.8rem; color:#999; padding:4px 0;">Receta base sin desglose.</div>';
                     if (recetas[id].ingredientes && Array.isArray(recetas[id].ingredientes)) {
@@ -355,7 +348,6 @@
                 });
             } catch(e) {}
 
-            // RENDER STOCK (Listado Clásico: Precio y Formato Original)
             try {
                 const iBox = document.getElementById('listaInsumosContainer'); iBox.innerHTML = '';
                 Object.keys(insumos).sort().forEach(n => {
@@ -366,7 +358,6 @@
                 });
             } catch(e) {}
 
-            // RENDER BODEGA (Inventario en Tiempo Real, Alertas y Costos)
             try {
                 const bBox = document.getElementById('listaBodegaContainer'); bBox.innerHTML = '';
                 Object.keys(insumos).sort().forEach(n => {
@@ -595,7 +586,6 @@
                 if (!n || isNaN(p) || isNaN(f)) return alert('Ingresa valores válidos. 💕');
                 if (m === 'new' && insumos[n]) return alert('Este insumo ya existe.');
                 
-                // Actualiza precio, formato y resetea el inventario disponible al formato recién comprado.
                 insumos[n] = [p, f, f]; 
                 
                 document.getElementById('stockNuevoNombre').value = '';
