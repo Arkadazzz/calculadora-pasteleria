@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Calculadora Pastelera v16 - Cotizador Dinámico</title>
+    <title>Calculadora Pastelera v18 - ERP Total</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         body { background-color: #FFF5F6; color: #2D2D2D; padding: 10px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding-bottom: 30px; -webkit-text-size-adjust: 100%; }
@@ -145,24 +145,35 @@
             <button class="action-btn btn-save" id="btnGuardarReceta" onclick="guardarNuevaReceta()">💾 GUARDAR RECETA COMPLETA</button>
         </div>
         
-        <!-- SECCIÓN 4: PRECIOS (NO TOCA BODEGA) -->
+        <!-- SECCIÓN 4: PRECIOS -->
         <div id="sec-stock" class="section">
             <div style="background:#FFF3CD; border:1px solid #FFEBA2; border-radius:10px; padding:10px; margin-bottom:15px; font-size:0.75rem; color:#856404;">
-                <b>Nota:</b> Esta pestaña es SOLO para actualizar el valor ($) al que compras y el tamaño del envase para sacar los costos. <b>Actualizar aquí NO sumará ni restará productos físicos de tu bodega.</b>
+                <b>Nota:</b> Esta pestaña es SOLO para editar precios y nombres. <b>Actualizar aquí NO sumará ni restará productos físicos de tu bodega.</b>
             </div>
 
             <div style="display:flex; gap:10px; margin-bottom:15px; font-weight:bold; font-size:0.85rem;">
-                <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="radio" name="stockM" value="update" checked onchange="altStock()" style="width:auto;"> Editar Precio ($)</label>
-                <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="radio" name="stockM" value="new" onchange="altStock()" style="width:auto;"> Crear Insumo</label>
+                <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="radio" name="stockM" value="update" checked onchange="altStock()" style="width:auto;"> Editar Insumo Existente</label>
+                <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="radio" name="stockM" value="new" onchange="altStock()" style="width:auto;"> Crear Insumo Nuevo</label>
             </div>
-            <div id="g-update"><label>Selecciona Insumo a editar precio:</label><select id="stockSelectInsumo" onchange="cStock()"></select></div>
-            <div id="g-new" style="display:none"><label>Nombre del Nuevo Insumo:</label><input type="text" id="stockNuevoNombre" placeholder="Ej: Cobertura Frutilla"></div>
+            
+            <div id="g-update">
+                <label>1. Selecciona Insumo a editar:</label>
+                <select id="stockSelectInsumo" onchange="cStock()" style="margin-bottom:10px;"></select>
+                
+                <label style="color:#E91E63;">2. Nombre (Puedes editarlo aquí):</label>
+                <input type="text" id="stockEditarNombre" style="margin-bottom:10px; background:#FFFBFC;">
+            </div>
+            
+            <div id="g-new" style="display:none">
+                <label>Nombre del Nuevo Insumo:</label>
+                <input type="text" id="stockNuevoNombre" placeholder="Ej: Cobertura Frutilla">
+            </div>
             
             <div style="display:flex; gap:10px; margin:10px 0">
                 <div style="flex:1"><label>Precio Pagado $:</label><input type="number" id="stockPrecio" placeholder="Ej: 2450"></div>
                 <div style="flex:1"><label>Formato Original:</label><input type="number" id="stockFormato" placeholder="Ej: 1000"></div>
             </div>
-            <button class="action-btn btn-calc" onclick="guardarInsumoStock()">💾 ACTUALIZAR VALOR EN SISTEMA</button>
+            <button class="action-btn btn-calc" onclick="guardarInsumoStock()">💾 GUARDAR CAMBIOS DE INSUMO</button>
             
             <label style="margin-top:20px;">Maestro de Precios Base ($ / Formato):</label>
             <div class="list-container" id="listaInsumosContainer" style="max-height:160px;"></div>
@@ -177,7 +188,7 @@
             </div>
         </div>
 
-        <!-- SECCIÓN 5: BODEGA (OPERACIONES DE INVENTARIO) -->
+        <!-- SECCIÓN 5: BODEGA -->
         <div id="sec-bodega" class="section">
             
             <div style="background:#F0FDF4; border:1px solid #95D5B2; border-radius:12px; padding:12px; margin-bottom:15px; box-shadow: 0 2px 4px rgba(45,106,79,0.05);">
@@ -227,35 +238,47 @@
 
         document.addEventListener("DOMContentLoaded", function() {
             try {
-                let isFirstRunV16 = !localStorage.getItem('pasteleria_v16_init');
+                let savedIns = localStorage.getItem('pasteleria_v18_insumos') || localStorage.getItem('pasteleria_v17_insumos') || localStorage.getItem('pasteleria_v16_insumos') || localStorage.getItem('pasteleria_master_insumos');
+                if (savedIns) {
+                    let parsed = JSON.parse(savedIns);
+                    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) insumos = parsed;
+                }
                 
-                if (isFirstRunV16) {
-                    let oldIns = localStorage.getItem('pasteleria_v15_insumos');
-                    if (oldIns) insumos = JSON.parse(oldIns);
-                    let oldRec = localStorage.getItem('pasteleria_v15_recetas');
-                    if (oldRec) recetas = JSON.parse(oldRec);
-                    
-                    localStorage.setItem('pasteleria_v16_init', 'true');
-                    sincronizar();
-                } else {
-                    let savedIns = localStorage.getItem('pasteleria_v16_insumos');
-                    if (savedIns) insumos = JSON.parse(savedIns);
-                    
-                    let savedRec = localStorage.getItem('pasteleria_v16_recetas');
-                    if (savedRec) recetas = JSON.parse(savedRec);
+                let savedRec = localStorage.getItem('pasteleria_v18_recetas') || localStorage.getItem('pasteleria_v17_recetas') || localStorage.getItem('pasteleria_v16_recetas') || localStorage.getItem('pasteleria_master_recetas');
+                if (savedRec) {
+                    let parsed = JSON.parse(savedRec);
+                    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) recetas = parsed;
                 }
             } catch(e) {
                 insumos = INSUMOS_DEFAULT;
                 recetas = RECETAS_DEFAULT;
             }
 
+            try {
+                Object.keys(recetas).forEach(id => {
+                    if (recetas[id] && recetas[id].ingredientes && !Array.isArray(recetas[id].ingredientes)) {
+                        let viejoObj = recetas[id].ingredientes;
+                        let nuevoArr = [];
+                        for (let k in viejoObj) {
+                            if (viejoObj.hasOwnProperty(k)) nuevoArr.push({ ing: k, cant: viejoObj[k] });
+                        }
+                        recetas[id].ingredientes = nuevoArr;
+                    }
+                });
+                Object.keys(insumos).forEach(k => {
+                    if (insumos[k] && Array.isArray(insumos[k]) && insumos[k].length === 2) {
+                        insumos[k] = [insumos[k][0], insumos[k][1], 0];
+                    }
+                });
+            } catch(e) {}
+
             try { poblarS(); renderListas(); nextId(); if (document.getElementById('stockSelectInsumo').value) cStock(); } catch(e) {}
         });
 
         function sincronizar() {
             try {
-                localStorage.setItem('pasteleria_v16_insumos', JSON.stringify(insumos));
-                localStorage.setItem('pasteleria_v16_recetas', JSON.stringify(recetas));
+                localStorage.setItem('pasteleria_v18_insumos', JSON.stringify(insumos));
+                localStorage.setItem('pasteleria_v18_recetas', JSON.stringify(recetas));
             } catch(e) {}
             renderListas();
             poblarS();
@@ -289,10 +312,10 @@
                 const s3 = document.getElementById('bodegaSelectReceta');
                 const s4 = document.getElementById('bodegaSumarInsumo'); 
                 const s5 = document.getElementById('bodegaRestarInsumo'); 
-                const sCalc = document.getElementById('calcEmpaque'); // Desplegable de empaque en calc
+                const sCalc = document.getElementById('calcEmpaque'); 
                 
                 s1.innerHTML = ''; s2.innerHTML = ''; s3.innerHTML = ''; s4.innerHTML = ''; s5.innerHTML = '';
-                sCalc.innerHTML = '<option value="">-- Sin empaque extra --</option>'; // Opción vacía por defecto
+                sCalc.innerHTML = '<option value="">-- Sin empaque extra --</option>'; 
                 
                 Object.keys(insumos).sort().forEach(n => {
                     const o = document.createElement('option'); o.value = n; o.innerText = n;
@@ -300,7 +323,7 @@
                     s2.appendChild(o.cloneNode(true));
                     s4.appendChild(o.cloneNode(true));
                     s5.appendChild(o.cloneNode(true));
-                    sCalc.appendChild(o.cloneNode(true)); // Llenar opciones de empaque
+                    sCalc.appendChild(o.cloneNode(true)); 
                 });
                 
                 Object.keys(recetas).sort((a,b) => parseInt(a)-parseInt(b)).forEach(id => {
@@ -336,7 +359,7 @@
                     let cost = getCost(id);
                     
                     let pasosRaw = recetas[id].pasos ? String(recetas[id].pasos) : "";
-                    let pasosHtml = pasosRaw ? `<div class="steps-box"><b>PASO A PASO:</b><br>${pasosRaw.replace(/\\n/g, '<br>')}</div>` : `<div class="steps-box" style="color:#999; font-style:italic;">Sin instrucciones registradas.</div>`;
+                    let pasosHtml = pasosRaw ? `<div class="steps-box"><b>PASO A PASO:</b><br>${pasosRaw.replace(/\n/g, '<br>')}</div>` : `<div class="steps-box" style="color:#999; font-style:italic;">Sin instrucciones registradas.</div>`;
                     
                     let ingListHtml = '<div style="font-size:0.8rem; color:#999; padding:4px 0;">Receta base sin desglose.</div>';
                     if (recetas[id].ingredientes && Array.isArray(recetas[id].ingredientes)) {
@@ -434,7 +457,6 @@
                 let costoRecetaTotal = getCost(id);
                 let costoEmpaqueTotal = 0;
 
-                // Si seleccionó empaque y puso cantidad, se calcula el costo de esa paquetería
                 if (empaque && insumos[empaque] && cantEmpaque > 0) {
                     costoEmpaqueTotal = (insumos[empaque][0] / insumos[empaque][1]) * cantEmpaque;
                 }
@@ -639,7 +661,11 @@
                 document.getElementById('g-update').style.display = (m === 'update') ? 'block' : 'none';
                 document.getElementById('g-new').style.display = (m === 'new') ? 'block' : 'none';
                 if (m === 'update') cStock();
-                else { document.getElementById('stockPrecio').value = ''; document.getElementById('stockFormato').value = ''; }
+                else { 
+                    document.getElementById('stockEditarNombre').value = '';
+                    document.getElementById('stockPrecio').value = ''; 
+                    document.getElementById('stockFormato').value = ''; 
+                }
             } catch(e) {}
         }
 
@@ -647,6 +673,7 @@
             try {
                 const n = document.getElementById('stockSelectInsumo').value;
                 if (insumos[n]) { 
+                    document.getElementById('stockEditarNombre').value = n;
                     document.getElementById('stockPrecio').value = insumos[n][0]; 
                     document.getElementById('stockFormato').value = insumos[n][1]; 
                 }
@@ -656,22 +683,50 @@
         function guardarInsumoStock() {
             try {
                 const m = document.querySelector('input[name="stockM"]:checked').value;
-                let n = (m === 'new') ? document.getElementById('stockNuevoNombre').value.trim().toLowerCase() : document.getElementById('stockSelectInsumo').value;
-                const p = parseFloat(document.getElementById('stockPrecio').value), f = parseFloat(document.getElementById('stockFormato').value);
+                const p = parseFloat(document.getElementById('stockPrecio').value);
+                const f = parseFloat(document.getElementById('stockFormato').value);
                 
-                if (!n || isNaN(p) || isNaN(f)) return alert('Ingresa valores válidos. 💕');
+                if (isNaN(p) || isNaN(f)) return alert('Ingresa valores válidos de precio y formato. 💕');
                 
                 if (m === 'new') {
+                    let n = document.getElementById('stockNuevoNombre').value.trim().toLowerCase();
+                    if (!n) return alert('Ingresa un nombre válido. 💕');
                     if (insumos[n]) return alert('Este insumo ya existe.');
+                    
                     insumos[n] = [p, f, 0]; 
                     alert(`¡Insumo creado! Se registró el precio de $${p}. Recuerda sumarle stock en la Bodega cuando lo compres. 🛒✨`);
                 } else {
-                    insumos[n][0] = p; 
-                    insumos[n][1] = f; 
-                    alert(`¡Precio actualizado! El nuevo valor ($${p}) se usará para cotizaciones futuras. El nivel físico de tu bodega NO fue modificado. 📝✨`);
+                    let oldName = document.getElementById('stockSelectInsumo').value;
+                    let newName = document.getElementById('stockEditarNombre').value.trim().toLowerCase();
+                    
+                    if (!newName) return alert('El nombre no puede quedar vacío. 💕');
+                    
+                    if (newName !== oldName) {
+                        if (insumos[newName]) return alert('Ya existe otro insumo con ese nuevo nombre.');
+                        
+                        // Hacer copia de seguridad de la cantidad en bodega y crear nuevo nombre
+                        insumos[newName] = [p, f, insumos[oldName][2]];
+                        delete insumos[oldName]; // Eliminar el nombre viejo
+                        
+                        // Buscar y actualizar el nombre en TODAS las recetas guardadas
+                        Object.keys(recetas).forEach(id => {
+                            if (recetas[id].ingredientes && Array.isArray(recetas[id].ingredientes)) {
+                                recetas[id].ingredientes.forEach(item => {
+                                    if (item.ing === oldName) item.ing = newName;
+                                });
+                            }
+                        });
+                        alert(`¡Insumo actualizado! Se renombró a "${newName}" y se guardaron sus nuevos valores. 📝✨`);
+                    } else {
+                        // Solo cambió precio o formato
+                        insumos[oldName][0] = p; 
+                        insumos[oldName][1] = f; 
+                        alert(`¡Precio actualizado! El nuevo valor ($${p}) se usará para cotizaciones futuras. 📝✨`);
+                    }
                 }
                 
                 document.getElementById('stockNuevoNombre').value = '';
+                document.getElementById('stockEditarNombre').value = '';
                 sincronizar(); 
                 document.querySelectorAll('input[name="stockM"]')[0].checked = true;
                 altStock();
