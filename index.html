@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Calculadora Pastelera v15 - ERP Completo (Reset)</title>
+    <title>Calculadora Pastelera v16 - Cotizador Dinámico</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         body { background-color: #FFF5F6; color: #2D2D2D; padding: 10px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding-bottom: 30px; -webkit-text-size-adjust: 100%; }
@@ -89,14 +89,24 @@
         <div id="sec-calc" class="section active">
             <label>1. Código ID del dulce a cotizar:</label>
             <input type="number" id="calcId" pattern="[0-9]*" inputmode="numeric" placeholder="Ej: 101" style="margin-bottom:15px">
+            
             <label>2. ¿Cuántas unidades salieron/saldrán?:</label>
-            <input type="number" id="calcCantidad" pattern="[0-9]*" inputmode="numeric" placeholder="Ej: 12">
+            <input type="number" id="calcCantidad" pattern="[0-9]*" inputmode="numeric" placeholder="Ej: 12" style="margin-bottom:15px">
+
+            <div style="background:#F7F9FA; border:1px solid #E2E8F0; border-radius:10px; padding:12px; margin-bottom:15px;">
+                <label style="color:#E91E63;">3. Empaque / Paquetería (Opcional):</label>
+                <select id="calcEmpaque" style="margin-bottom:10px"></select>
+                
+                <label>4. ¿Cuántos empaques usarás para esta tanda?:</label>
+                <input type="number" id="calcCantEmpaque" pattern="[0-9]*" inputmode="numeric" placeholder="Ej: 1 (Una caja para todos)">
+            </div>
+
             <button class="action-btn btn-calc" onclick="calcularPrecio()">💰 CALCULAR PRECIO UNITARIO</button>
             
             <div class="results">
                 <div id="resProd" style="font-weight:700; font-size: 0.95rem;">Preparación: ---</div>
-                <div id="resCost" style="font-size:0.85rem; color:#555">Costo Unitario Real: $0 CLP</div>
-                <div class="res-price" id="resVenta" style="margin-bottom: 5px;">VENDER A (+60%): $0 CLP</div>
+                <div id="resCost" style="font-size:0.85rem; color:#555; margin-top:5px;">Costo Unitario Real: $0 CLP</div>
+                <div class="res-price" id="resVenta" style="margin-bottom: 5px; margin-top:5px;">VENDER A (+60%): $0 CLP</div>
             </div>
         </div>
         
@@ -170,7 +180,6 @@
         <!-- SECCIÓN 5: BODEGA (OPERACIONES DE INVENTARIO) -->
         <div id="sec-bodega" class="section">
             
-            <!-- TARJETA 1: SUMAR A BODEGA -->
             <div style="background:#F0FDF4; border:1px solid #95D5B2; border-radius:12px; padding:12px; margin-bottom:15px; box-shadow: 0 2px 4px rgba(45,106,79,0.05);">
                 <label style="color:#1B4332; font-size:0.95rem; font-weight:bold;">🛒 Llegué de comprar (Sumar stock):</label>
                 <label style="font-size:0.75rem; color:#40916C; font-weight:normal; margin-bottom:6px;">Agrega la cantidad comprada (en gramos/ml/unidades) a lo que ya tienes guardado.</label>
@@ -180,7 +189,6 @@
                 <button class="action-btn btn-add-stock" onclick="sumarStockBodega()" style="margin-top:10px; padding:12px; font-size:0.9rem;">➕ AGREGAR A MI DESPENSA</button>
             </div>
 
-            <!-- TARJETA 2: RESTAR DE BODEGA -->
             <div style="background:#FFFBFC; border:1px solid #F0A6CA; border-radius:12px; padding:12px; margin-bottom:15px; box-shadow: 0 2px 4px rgba(233,30,99,0.05);">
                 <label style="color:#C9184A; font-size:0.95rem; font-weight:bold;">🥣 Cociné hoy (Restar stock):</label>
                 <label style="font-size:0.75rem; color:#666; font-weight:normal; margin-bottom:6px;">Selecciona la receta para restar automáticamente sus ingredientes de la bodega.</label>
@@ -193,7 +201,6 @@
                 <button class="action-btn btn-deduct" onclick="descontarDesdeBodega()" style="margin-top:10px; padding:12px; font-size:0.9rem;">👩🏻‍🍳 DESCONTAR INGREDIENTES</button>
             </div>
 
-            <!-- TARJETA 3: RESTAR MANUALMENTE -->
             <div style="background:#FFF3CD; border:1px solid #FFEBA2; border-radius:12px; padding:12px; margin-bottom:15px; box-shadow: 0 2px 4px rgba(133,100,4,0.05);">
                 <label style="color:#856404; font-size:0.95rem; font-weight:bold;">🗑️ Ajuste Manual (Restar stock):</label>
                 <label style="font-size:0.75rem; color:#666; font-weight:normal; margin-bottom:6px;">Usa esta opción si necesitas descontar productos por mermas, derrames o ajustes.</label>
@@ -209,27 +216,7 @@
     </div>
 
     <script>
-        // ESTADO INICIAL 15: PRECIOS INTACTOS, BODEGAS EN 0
-        const INSUMOS_DEFAULT = {
-            "mantequilla": [3000, 250, 0], "azúcar rubia": [1450, 500, 0], "azúcar blanca": [1450, 1000, 0],
-            "huevo": [300, 1, 0], "leche": [1350, 1000, 0], "vinagre": [990, 500, 0], "vainilla": [1200, 100, 0],
-            "colorante rojo en polvo": [2000, 20, 0], "harina": [1590, 1000, 0], "maicena": [2990, 250, 0],
-            "polvo para hornear": [2470, 200, 0], "bicarbonato de sodio": [580, 10, 0], 
-            "chips de chocolate blanco": [5000, 312, 0], "chips de chocolate negro": [4930, 200, 0],
-            "cacao amargo": [2500, 150, 0], "aceite maravilla": [2450, 900, 0], "nueces picadas": [10000, 1000, 0],
-            "cerveza negra": [1450, 470, 0], "miel": [8750, 1000, 0], "arándanos": [2390, 125, 0],
-            "alulosa": [7170, 500, 0], "platano": [795, 500, 0], "harina mix orgran": [2890, 500, 0],
-            "yogurt griego": [590, 150, 0], "azúcar flor": [2850, 1000, 0], "avena": [2550, 700, 0],
-            "manzana verde": [1295, 500, 0], "pistachos": [4690, 100, 0], "mini m&m": [3150, 31, 0],
-            "mini malvaviscos": [3090, 400, 0], "te match en polvo": [9990, 100, 0], "harina de avena": [2490, 850, 0],
-            "pasas rubias": [999, 100, 0], "coco rayado": [1920, 100, 0], "harina de almendra": [13990, 500, 0],
-            "crema de coco": [3430, 396, 0], "margarina": [2990, 900, 0], "esencia de pan de pascua": [7000, 1000, 0],
-            "nuez moscada": [690, 5, 0], "jengibre molido": [430, 15, 0], "harina de arroz": [1280, 500, 0],
-            "fruta confitada": [4790, 1000, 0], "levadura": [2290, 125, 0], "leche en polvo": [12790, 1440, 0],
-            "glucosa": [2190, 1000, 0], "harina panificable": [7190, 700, 0]
-        };
-
-        // ESTADO INICIAL 15: RECETAS VACÍAS (LIMPIAS)
+        const INSUMOS_DEFAULT = {};
         const RECETAS_DEFAULT = {};
         
         let insumos = INSUMOS_DEFAULT;
@@ -240,31 +227,21 @@
 
         document.addEventListener("DOMContentLoaded", function() {
             try {
-                // RESET TOTAL FORZADO PARA LA VERSIÓN 15
-                let isFirstRunV15 = !localStorage.getItem('pasteleria_v15_init');
+                let isFirstRunV16 = !localStorage.getItem('pasteleria_v16_init');
                 
-                if (isFirstRunV15) {
-                    // Mantener precios anteriores si existen, pero borrar la bodega (index 2 = 0)
-                    let oldIns = localStorage.getItem('pasteleria_v14_insumos') || localStorage.getItem('pasteleria_v13_insumos');
-                    if (oldIns) {
-                        let parsedOld = JSON.parse(oldIns);
-                        for(let k in parsedOld) {
-                            if(Array.isArray(parsedOld[k])) {
-                                insumos[k] = [parsedOld[k][0], parsedOld[k][1], 0]; 
-                            }
-                        }
-                    }
+                if (isFirstRunV16) {
+                    let oldIns = localStorage.getItem('pasteleria_v15_insumos');
+                    if (oldIns) insumos = JSON.parse(oldIns);
+                    let oldRec = localStorage.getItem('pasteleria_v15_recetas');
+                    if (oldRec) recetas = JSON.parse(oldRec);
                     
-                    // Las recetas ya parten en RECETAS_DEFAULT (vacío)
-                    
-                    localStorage.setItem('pasteleria_v15_init', 'true');
+                    localStorage.setItem('pasteleria_v16_init', 'true');
                     sincronizar();
                 } else {
-                    // Carga Normal para cuando ya usó la V15
-                    let savedIns = localStorage.getItem('pasteleria_v15_insumos');
+                    let savedIns = localStorage.getItem('pasteleria_v16_insumos');
                     if (savedIns) insumos = JSON.parse(savedIns);
                     
-                    let savedRec = localStorage.getItem('pasteleria_v15_recetas');
+                    let savedRec = localStorage.getItem('pasteleria_v16_recetas');
                     if (savedRec) recetas = JSON.parse(savedRec);
                 }
             } catch(e) {
@@ -277,8 +254,8 @@
 
         function sincronizar() {
             try {
-                localStorage.setItem('pasteleria_v15_insumos', JSON.stringify(insumos));
-                localStorage.setItem('pasteleria_v15_recetas', JSON.stringify(recetas));
+                localStorage.setItem('pasteleria_v16_insumos', JSON.stringify(insumos));
+                localStorage.setItem('pasteleria_v16_recetas', JSON.stringify(recetas));
             } catch(e) {}
             renderListas();
             poblarS();
@@ -312,8 +289,10 @@
                 const s3 = document.getElementById('bodegaSelectReceta');
                 const s4 = document.getElementById('bodegaSumarInsumo'); 
                 const s5 = document.getElementById('bodegaRestarInsumo'); 
+                const sCalc = document.getElementById('calcEmpaque'); // Desplegable de empaque en calc
                 
                 s1.innerHTML = ''; s2.innerHTML = ''; s3.innerHTML = ''; s4.innerHTML = ''; s5.innerHTML = '';
+                sCalc.innerHTML = '<option value="">-- Sin empaque extra --</option>'; // Opción vacía por defecto
                 
                 Object.keys(insumos).sort().forEach(n => {
                     const o = document.createElement('option'); o.value = n; o.innerText = n;
@@ -321,6 +300,7 @@
                     s2.appendChild(o.cloneNode(true));
                     s4.appendChild(o.cloneNode(true));
                     s5.appendChild(o.cloneNode(true));
+                    sCalc.appendChild(o.cloneNode(true)); // Llenar opciones de empaque
                 });
                 
                 Object.keys(recetas).sort((a,b) => parseInt(a)-parseInt(b)).forEach(id => {
@@ -356,7 +336,7 @@
                     let cost = getCost(id);
                     
                     let pasosRaw = recetas[id].pasos ? String(recetas[id].pasos) : "";
-                    let pasosHtml = pasosRaw ? `<div class="steps-box"><b>PASO A PASO:</b><br>${pasosRaw.replace(/\n/g, '<br>')}</div>` : `<div class="steps-box" style="color:#999; font-style:italic;">Sin instrucciones registradas.</div>`;
+                    let pasosHtml = pasosRaw ? `<div class="steps-box"><b>PASO A PASO:</b><br>${pasosRaw.replace(/\\n/g, '<br>')}</div>` : `<div class="steps-box" style="color:#999; font-style:italic;">Sin instrucciones registradas.</div>`;
                     
                     let ingListHtml = '<div style="font-size:0.8rem; color:#999; padding:4px 0;">Receta base sin desglose.</div>';
                     if (recetas[id].ingredientes && Array.isArray(recetas[id].ingredientes)) {
@@ -444,12 +424,33 @@
             try {
                 const id = document.getElementById('calcId').value.trim();
                 const cant = parseFloat(document.getElementById('calcCantidad').value);
+                const empaque = document.getElementById('calcEmpaque').value;
+                const cantEmpaque = parseFloat(document.getElementById('calcCantEmpaque').value) || 0;
+
                 if (!recetas[id] || isNaN(cant) || cant <= 0) {
-                    return alert('Amorcito, ingresa un ID y cantidad válida para cotizar. 💕');
+                    return alert('Amorcito, ingresa un ID de receta y cantidad válida para cotizar. 💕');
                 }
-                const unit = getCost(id) / cant;
+                
+                let costoRecetaTotal = getCost(id);
+                let costoEmpaqueTotal = 0;
+
+                // Si seleccionó empaque y puso cantidad, se calcula el costo de esa paquetería
+                if (empaque && insumos[empaque] && cantEmpaque > 0) {
+                    costoEmpaqueTotal = (insumos[empaque][0] / insumos[empaque][1]) * cantEmpaque;
+                }
+
+                const costoTotalTanda = costoRecetaTotal + costoEmpaqueTotal;
+                const unit = costoTotalTanda / cant;
+                
+                let desglose = "";
+                if (costoEmpaqueTotal > 0) {
+                    let unitReceta = costoRecetaTotal / cant;
+                    let unitEmpaque = costoEmpaqueTotal / cant;
+                    desglose = `<br><span style="font-size:0.75rem; color:#888;">(Dulce: $${Math.round(unitReceta)} | Empaque: $${Math.round(unitEmpaque)})</span>`;
+                }
+
                 document.getElementById('resProd').innerText = `✨ ${recetas[id].nombre} ✨`;
-                document.getElementById('resCost').innerText = `Costo Unitario Real: $${Math.round(unit)} CLP`;
+                document.getElementById('resCost').innerHTML = `Costo Unitario Real: $${Math.round(unit)} CLP${desglose}`;
                 document.getElementById('resVenta').innerText = `VENDER A (+60%): $${Math.ceil((unit * 1.6) / 10) * 10} CLP`;
             } catch(e) {}
         }
@@ -468,12 +469,7 @@
                 insumos[n][2] += c;
                 
                 sincronizar();
-                alert(`¡Compra registrada en despensa! 
-
-Antes tenías: ${previo}
-Agregaste: +${c}
-
-Total en despensa ahora: ${insumos[n][2]} 📦✨`);
+                alert(`¡Compra registrada en despensa! \n\nAntes tenías: ${previo}\nAgregaste: +${c}\n\nTotal en despensa ahora: ${insumos[n][2]} 📦✨`);
                 document.getElementById('bodegaSumarCantidad').value = '';
             } catch(e) { alert("Error al sumar inventario."); }
         }
@@ -527,12 +523,7 @@ Total en despensa ahora: ${insumos[n][2]} 📦✨`);
                 insumos[n][2] = Math.max(0, insumos[n][2] - c);
                 
                 sincronizar();
-                alert(`¡Descuento registrado! 
-
-Antes tenías: ${previo}
-Restaste: -${c}
-
-Total en despensa ahora: ${insumos[n][2]} 🗑️✨`);
+                alert(`¡Descuento registrado! \n\nAntes tenías: ${previo}\nRestaste: -${c}\n\nTotal en despensa ahora: ${insumos[n][2]} 🗑️✨`);
                 document.getElementById('bodegaRestarCantidad').value = '';
             } catch(e) { alert("Error al restar inventario manual."); }
         }
@@ -672,7 +663,7 @@ Total en despensa ahora: ${insumos[n][2]} 🗑️✨`);
                 
                 if (m === 'new') {
                     if (insumos[n]) return alert('Este insumo ya existe.');
-                    insumos[n] = [p, f, 0]; // Creado con 0 stock físico por defecto
+                    insumos[n] = [p, f, 0]; 
                     alert(`¡Insumo creado! Se registró el precio de $${p}. Recuerda sumarle stock en la Bodega cuando lo compres. 🛒✨`);
                 } else {
                     insumos[n][0] = p; 
@@ -700,7 +691,6 @@ Total en despensa ahora: ${insumos[n][2]} 🗑️✨`);
             } catch(e) {}
         }
 
-        // --- SISTEMA BLINDADO DE IMPORTACIÓN DE RESPALDOS ---
         function importarRespaldo(event) {
             try {
                 const file = event.target.files[0];
@@ -713,7 +703,6 @@ Total en despensa ahora: ${insumos[n][2]} 🗑️✨`);
                             insumos = parsed.insumos;
                             recetas = parsed.recetas;
                             
-                            // MIGRACIÓN AUTOMÁTICA EN LA IMPORTACIÓN (Previene recetas vacías de versiones viejas)
                             Object.keys(recetas).forEach(id => {
                                 if (recetas[id] && recetas[id].ingredientes && !Array.isArray(recetas[id].ingredientes)) {
                                     let viejoObj = recetas[id].ingredientes;
@@ -732,7 +721,7 @@ Total en despensa ahora: ${insumos[n][2]} 🗑️✨`);
 
                             sincronizar();
                             alert('¡Respaldo subido y restaurado con éxito! 📂✨ Todas tus recetas, precios y bodega física están intactos.');
-                            location.reload(); // Fuerza a recargar la UI con los datos nuevos
+                            location.reload(); 
                         } else { alert('Formato de archivo inválido.'); }
                     } catch (err) { alert('Error al leer el archivo de respaldo.'); }
                 };
